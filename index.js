@@ -3,9 +3,18 @@ import express from "express";
 import cors from "cors";
 import moment from "moment";
 import { Server } from "socket.io";
+import path from "path";
+import { fileURLToPath } from "url";
+
+//Routers
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 //Global Variables
 const app = express();
+app.use(
+  express.static(path.join(__dirname, "../Front-End-Fantastic-Chat-App"))
+);
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   console.log(`Socket.IO server running at http://localhost:${PORT}/`);
