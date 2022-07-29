@@ -1,6 +1,7 @@
 //Imports
 import express from "express";
 import cors from "cors";
+import moment from "moment";
 import { Server } from "socket.io";
 
 //Global Variables
@@ -18,9 +19,33 @@ const io = new Server(server, {
 //CORS
 app.use(cors());
 
+const botName = "Fantastic Bot";
+
 //Socket Connection
 io.on("connection", (socket) => {
-  socket.on("chat message", (msg) => {
-    io.emit("chat message", msg);
+  //Welcome Message
+  socket.emit("message", formatMessage(botName, "Welcome to Fantastic Chat"));
+
+  //New connection message
+  socket.broadcast.emit(
+    "message",
+    formatMessage(botName, "New user has joined the chat")
+  );
+
+  //Disconnection message
+  socket.on("disconnect", () => {
+    io.emit("message", formatMessage(botName, "Someone has left the chat"));
+  });
+
+  socket.on("fromUser", (msg) => {
+    io.emit("message", formatMessage(msg.sender, msg.text));
   });
 });
+
+function formatMessage(username, text) {
+  return {
+    username,
+    text,
+    time: moment().format("h:mm a"),
+  };
+}
