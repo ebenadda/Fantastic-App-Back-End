@@ -20,32 +20,62 @@ const io = new Server(server, {
 app.use(cors());
 
 const botName = "Fantastic Bot";
+let users = [];
 
 //Socket Connection
 io.on("connection", (socket) => {
-  //Welcome Message
-  socket.emit("message", formatMessage(botName, "Welcome to Fantastic Chat"));
+  socket.on("newUser", (username) => {
+    newUser(socket.id, username);
 
-  //New connection message
-  socket.broadcast.emit(
-    "message",
-    formatMessage(botName, "New user has joined the chat")
-  );
+    //Welcome Message
+    socket.emit("message", formatMessage(botName, "Welcome to Fantastic Chat"));
+
+    //New connection message
+    socket.broadcast.emit(
+      "message",
+      formatMessage(botName, `${username} has joined the chat`)
+    );
+
+    //Passing online user list
+    io.emit("users", users);
+  });
 
   //Disconnection message
   socket.on("disconnect", () => {
-    io.emit("message", formatMessage(botName, "Someone has left the chat"));
+    const user = findUser(socket.id);
+    io.emit(
+      "message",
+      formatMessage(botName, `${user.username} has left the chat`)
+    );
+
+    //Remove the disconnected user
+    users = users.filter((user) => user.id !== socket.id);
+    //Passing user list after user left
+    io.emit("users", users);
   });
 
+  //Messages from users
   socket.on("fromUser", (msg) => {
-    io.emit("message", formatMessage(msg.sender, msg.text));
+    const user = findUser(socket.id);
+    io.emit("message", formatMessage(user.username, msg));
   });
 });
 
+//Function to return the user object
 function formatMessage(username, text) {
   return {
     username,
     text,
     time: moment().format("h:mm a"),
   };
+}
+//Adding new user to array
+function newUser(id, username) {
+  const user = { id, username };
+  users.push(user);
+}
+
+//Finding the user by its socket id
+function findUser(id) {
+  return users.find((user) => user.id === id);
 }
